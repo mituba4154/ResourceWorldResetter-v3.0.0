@@ -29,7 +29,7 @@ ResourceWorldResetter automates the resetting of resource worlds on your Minecra
 | `/resetworld`| Manually reset the resource world | `resourceworldresetter.admin` |
 
 ## More Information
-For full documentation, including **detailed config settings, GUI breakdown, and advanced usage**, visit the **[Wiki](https://github.com/Lozaine/ResourceWorldResetter/wiki)**.
+For full documentation, including **detailed config settings, GUI breakdown, and advanced usage**, visit the **[Wiki](https://github.com/Lozaine/ResourceWorldResetter-v3.0.0/wiki)**.
 
 ---
 
