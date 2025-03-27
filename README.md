@@ -12,7 +12,7 @@ ResourceWorldResetter automates the resetting of resource worlds on your Minecra
 - Safe teleportation before resets
 - Configurable reset warnings
 - **bStats integration** for analytics
-- Supports **Minecraft 1.21.5+**
+- Supports **Minecraft 1.21+**
 
 ## Installation
 1. **Download** the latest release from [GitHub Releases](https://github.com/Lozaine/ResourceWorldResetter/releases).
