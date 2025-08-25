@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'com.lozaine'
-version '2.3.0'
+version '3.0.0'
 
 repositories {
     mavenCentral()
@@ -15,12 +15,11 @@ repositories {
 dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.21.5-R0.1-SNAPSHOT'
     compileOnly 'com.onarandombox.multiversecore:Multiverse-Core:4.3.1'
-    implementation 'org.bstats:bstats-bukkit:3.0.2'
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 tasks.withType(JavaCompile) {

@@ -93,23 +93,13 @@ public class ResourceWorldResetter extends JavaPlugin {
             return;
         }
 
-        int pluginId = 25197;
-        Metrics metrics = new Metrics(this, pluginId);
-        // Track reset type (daily, weekly, monthly)
-        metrics.addCustomChart(new Metrics.SimplePie("reset_type", () -> this.resetType));
-
-        // Track what time users schedule resets
-        metrics.addCustomChart(new Metrics.SimplePie("reset_hour", () -> String.valueOf(this.restartTime)));
-
-        // Track warning time
-        metrics.addCustomChart(new Metrics.SimplePie("warning_time", () -> String.valueOf(this.resetWarningTime)));
-
-        // Track Minecraft version
-        metrics.addCustomChart(new Metrics.SimplePie("server_version", () -> Bukkit.getBukkitVersion()));
-
         if (getConfig().getBoolean("metrics.enabled", true)) {
-            metrics = new Metrics(this, pluginId);
-            // Add custom charts...
+            int pluginId = 25197;
+            Metrics metrics = new Metrics(this, pluginId);
+            metrics.addCustomChart(new Metrics.SimplePie("reset_type", () -> this.resetType));
+            metrics.addCustomChart(new Metrics.SimplePie("reset_hour", () -> String.valueOf(this.restartTime)));
+            metrics.addCustomChart(new Metrics.SimplePie("warning_time", () -> String.valueOf(this.resetWarningTime)));
+            metrics.addCustomChart(new Metrics.SimplePie("server_version", () -> Bukkit.getBukkitVersion()));
             LogUtil.log(getLogger(), "bStats metrics enabled", Level.INFO);
         } else {
             LogUtil.log(getLogger(), "bStats metrics disabled by configuration", Level.INFO);
@@ -327,6 +317,19 @@ public class ResourceWorldResetter extends JavaPlugin {
     }
 
     public double getServerTPS() {
+        try {
+            // Attempt Paper API first if available
+            java.lang.reflect.Method getTPSMethod = Bukkit.getServer().getClass().getMethod("getTPS");
+            Object tpsObj = getTPSMethod.invoke(Bukkit.getServer());
+            if (tpsObj instanceof double[] tpsArray && tpsArray.length > 0) {
+                return tpsArray[0];
+            }
+        } catch (NoSuchMethodException ignored) {
+            // Fall through to CraftBukkit/NMS reflection
+        } catch (Exception e) {
+            getLogger().fine("Paper getTPS reflection failed: " + e.getMessage());
+        }
+
         try {
             Object mcServer = Bukkit.getServer().getClass().getMethod("getServer").invoke(Bukkit.getServer());
             double[] recentTps = (double[]) mcServer.getClass().getField("recentTps").get(mcServer);
