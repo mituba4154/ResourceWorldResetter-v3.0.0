@@ -1,5 +1,5 @@
 name: ResourcesWorldResetter
-version: '2.3.0'
+version: '3.0.0'
 main: com.lozaine.ResourceWorldResetter.ResourceWorldResetter
 api-version: '1.21'
 depend: [Multiverse-Core]
@@ -20,4 +20,9 @@ commands:
   resetworld:
     description: "Force reset the resource world"
     usage: "/resetworld"
+    permission: "resourceworldresetter.admin"
+
+  rwrregion:
+    description: "Manage region-based resets"
+    usage: "/rwrregion <enable|disable|list|add <rx> <rz>|remove <rx> <rz>|addhere>"
     permission: "resourceworldresetter.admin"

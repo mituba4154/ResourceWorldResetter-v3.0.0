@@ -56,8 +56,10 @@ public class AdminGUI implements Listener {
         gui.setItem(14, createGuiItem(Material.SUNFLOWER, "Restart Time", "Hour of daily reset"));
         gui.setItem(16, createGuiItem(Material.BELL, "Warning Time", "Minutes before reset"));
 
-        gui.setItem(20, createGuiItem(Material.TNT, "Force Reset", "Reset world immediately"));
-        gui.setItem(22, createGuiItem(Material.REDSTONE, "Reload Config", "Reload all settings"));
+        gui.setItem(18, createGuiItem(Material.FILLED_MAP, (plugin.isRegionsEnabled() ? "Disable" : "Enable") + " Region Mode", "Toggle region-based resets"));
+        gui.setItem(20, createGuiItem(Material.MAP, "Manage Regions", "Add or remove regions to reset"));
+        gui.setItem(22, createGuiItem(Material.TNT, "Force Reset", "Reset immediately (respects mode)"));
+        gui.setItem(24, createGuiItem(Material.REDSTONE, "Reload Config", "Reload all settings"));
 
         player.openInventory(gui);
         activeGuis.put(player.getUniqueId(), GuiType.MAIN_MENU);

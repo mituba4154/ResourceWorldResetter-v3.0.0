@@ -81,6 +81,19 @@ public class AdminGUIListener implements Listener {
 
     private void handleMainMenuClick(Player player, String itemName) {
         switch (itemName) {
+            case "Enable Region Mode":
+                plugin.setRegionsEnabled(true);
+                player.sendMessage(ChatColor.GREEN + "Region mode enabled.");
+                adminGUI.openMainMenu(player);
+                break;
+            case "Disable Region Mode":
+                plugin.setRegionsEnabled(false);
+                player.sendMessage(ChatColor.YELLOW + "Region mode disabled.");
+                adminGUI.openMainMenu(player);
+                break;
+            case "Manage Regions":
+                player.sendMessage(ChatColor.YELLOW + "Use /rwrregion add <rx> <rz> or /rwrregion remove <rx> <rz>.");
+                break;
             case "Change World":
                 adminGUI.openWorldSelectionMenu(player);
                 break;

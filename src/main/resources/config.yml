@@ -7,3 +7,9 @@ resetType: "daily"
 # For weekly: day of week (1=Monday through 7=Sunday)
 # For monthly: day of month (1-31)
 resetDay: 1
+
+# Region-based reset options
+regions:
+  enabled: false               # If true, resets target only configured regions instead of whole world
+  immediateRegenerationOnAdd: true  # If true, a region regenerates immediately when added via command
+  list: []                     # List of region coordinates to regenerate, format: "x,z" (region coords)
