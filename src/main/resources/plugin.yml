@@ -21,3 +21,8 @@ commands:
     description: "Force reset the resource world"
     usage: "/resetworld"
     permission: "resourceworldresetter.admin"
+
+  rwrregion:
+    description: "Manage region-based resets"
+    usage: "/rwrregion <enable|disable|list|add <rx> <rz>|remove <rx> <rz>|addhere>"
+    permission: "resourceworldresetter.admin"

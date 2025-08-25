@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.lozaine.ResourceWorldResetter.metrics.Metrics;
+import com.lozaine.ResourceWorldResetter.commands.RwrRegionCommand;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -28,6 +29,9 @@ public class ResourceWorldResetter extends JavaPlugin {
     private int resetWarningTime;
     private String resetType;
     private int resetDay;
+    private boolean regionsEnabled;
+    private boolean regionsImmediateOnAdd;
+    private java.util.Set<String> regionsToReset = new java.util.HashSet<>();
     private AdminGUI adminGUI;
     private int warningTaskId = -1;
     private int resetTaskId = -1;
@@ -37,6 +41,8 @@ public class ResourceWorldResetter extends JavaPlugin {
     public int getRestartTime() { return this.restartTime; }
     public int getResetWarningTime() { return this.resetWarningTime; }
     public int getResetDay() { return this.resetDay; }
+    public boolean isRegionsEnabled() { return this.regionsEnabled; }
+    public java.util.Set<String> getRegionsToReset() { return java.util.Collections.unmodifiableSet(regionsToReset); }
 
     public void setWorldName(String name) {
         this.worldName = name;
@@ -81,6 +87,33 @@ public class ResourceWorldResetter extends JavaPlugin {
         }
     }
 
+    public void setRegionsEnabled(boolean enabled) {
+        this.regionsEnabled = enabled;
+        getConfig().set("regions.enabled", enabled);
+        saveConfig();
+    }
+
+    public void addRegionToReset(int regionX, int regionZ) {
+        String key = regionX + "," + regionZ;
+        if (regionsToReset.add(key)) {
+            java.util.List<String> list = new java.util.ArrayList<>(regionsToReset);
+            getConfig().set("regions.list", list);
+            saveConfig();
+            if (regionsImmediateOnAdd && Bukkit.getWorld(worldName) != null) {
+                regenerateRegion(Bukkit.getWorld(worldName), regionX, regionZ);
+            }
+        }
+    }
+
+    public void removeRegionToReset(int regionX, int regionZ) {
+        String key = regionX + "," + regionZ;
+        if (regionsToReset.remove(key)) {
+            java.util.List<String> list = new java.util.ArrayList<>(regionsToReset);
+            getConfig().set("regions.list", list);
+            saveConfig();
+        }
+    }
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -108,6 +141,7 @@ public class ResourceWorldResetter extends JavaPlugin {
         loadConfig();
         adminGUI = new AdminGUI(this);
         getServer().getPluginManager().registerEvents(new AdminGUIListener(this, adminGUI), this);
+        getCommand("rwrregion").setExecutor(new RwrRegionCommand(this));
 
         ensureResourceWorldExists();
         scheduleDailyReset();
@@ -255,11 +289,18 @@ public class ResourceWorldResetter extends JavaPlugin {
 
         // Immediate reset for manual resets or if warning time is 0
         if (!isScheduled || resetWarningTime <= 0) {
-            performReset(world);
+            if (regionsEnabled) {
+                performRegionReset(world);
+            } else {
+                performReset(world);
+            }
         } else {
-            // For scheduled resets, the warning was already handled in scheduleDailyReset()
-            // So we just do the reset directly
-            performReset(world);
+            // For scheduled resets, the warning was already handled
+            if (regionsEnabled) {
+                performRegionReset(world);
+            } else {
+                performReset(world);
+            }
         }
     }
 
@@ -314,6 +355,74 @@ public class ResourceWorldResetter extends JavaPlugin {
                 });
             }
         });
+    }
+
+    private void performRegionReset(World world) {
+        LogUtil.log(getLogger(), "Starting region-based reset for " + worldName, Level.INFO);
+        Bukkit.broadcastMessage(ChatColor.RED + "[ResourceWorldResetter] Region reset in progress for configured regions.");
+
+        // Teleport players out of affected regions to world spawn
+        teleportPlayersOutOfRegions(world);
+
+        // Regenerate region files
+        for (String key : regionsToReset) {
+            String[] parts = key.split(",");
+            try {
+                int rx = Integer.parseInt(parts[0]);
+                int rz = Integer.parseInt(parts[1]);
+                regenerateRegion(world, rx, rz);
+            } catch (Exception e) {
+                LogUtil.log(getLogger(), "Invalid region entry: " + key, Level.WARNING);
+            }
+        }
+
+        Bukkit.broadcastMessage(ChatColor.GREEN + "[ResourceWorldResetter] Configured regions have been regenerated.");
+        LogUtil.log(getLogger(), "Region-based reset completed", Level.INFO);
+    }
+
+    private void teleportPlayersOutOfRegions(World world) {
+        World defaultWorld = Bukkit.getWorlds().get(0);
+        org.bukkit.Location spawn = defaultWorld.getSpawnLocation();
+        for (Player player : world.getPlayers()) {
+            org.bukkit.Location loc = player.getLocation();
+            int chunkX = loc.getBlockX() >> 4;
+            int chunkZ = loc.getBlockZ() >> 4;
+            int regionX = chunkX >> 5; // 32x32 chunks per region
+            int regionZ = chunkZ >> 5;
+            String key = regionX + "," + regionZ;
+            if (regionsToReset.contains(key)) {
+                player.teleport(spawn);
+                player.sendMessage(ChatColor.GREEN + "[ResourceWorldResetter] You were moved for a region reset.");
+            }
+        }
+    }
+
+    private void regenerateRegion(World world, int regionX, int regionZ) {
+        try {
+            // Unload chunks in target region
+            for (int cx = regionX << 5; cx < (regionX << 5) + 32; cx++) {
+                for (int cz = regionZ << 5; cz < (regionZ << 5) + 32; cz++) {
+                    if (world.isChunkLoaded(cx, cz)) {
+                        world.unloadChunk(cx, cz, true);
+                    }
+                }
+            }
+
+            // Delete region file(s)
+            java.io.File regionDir = new java.io.File(world.getWorldFolder(), "region");
+            java.io.File regionFile = new java.io.File(regionDir, "r." + regionX + "." + regionZ + ".mca");
+            if (regionFile.exists()) {
+                LogUtil.log(getLogger(), "Deleting region file: " + regionFile.getAbsolutePath(), Level.INFO);
+                if (!regionFile.delete()) {
+                    LogUtil.log(getLogger(), "Failed to delete region file: " + regionFile.getName(), Level.WARNING);
+                }
+            }
+
+            // Force chunks to regenerate on next access by clearing POI and entities via async task
+            // Note: Spigot handles regeneration when chunk is generated again.
+        } catch (Exception e) {
+            LogUtil.log(getLogger(), "Error regenerating region (" + regionX + "," + regionZ + "): " + e.getMessage(), Level.SEVERE);
+        }
     }
 
     public double getServerTPS() {
@@ -398,6 +507,12 @@ public class ResourceWorldResetter extends JavaPlugin {
         resetWarningTime = getConfig().getInt("resetWarningTime", 5);
         resetType = getConfig().getString("resetType", "daily");
         resetDay = getConfig().getInt("resetDay", 1);
+
+        regionsEnabled = getConfig().getBoolean("regions.enabled", false);
+        regionsImmediateOnAdd = getConfig().getBoolean("regions.immediateRegenerationOnAdd", true);
+        regionsToReset.clear();
+        java.util.List<String> list = getConfig().getStringList("regions.list");
+        if (list != null) regionsToReset.addAll(list);
 
         LogUtil.log(getLogger(), "Configuration loaded: worldName=" + worldName +
                 ", resetType=" + resetType + ", restartTime=" + restartTime +
