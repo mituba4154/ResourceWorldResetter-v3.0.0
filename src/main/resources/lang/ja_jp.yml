@@ -1,0 +1,135 @@
+# Japanese Language File for ResourceWorldResetter
+
+# GUI Menu Titles
+gui.title.main: "&3&lリソースワールド管理"
+gui.title.world_selection: "&3リソースワールドを選択"
+gui.title.reset_type: "&3リセットタイプを選択"
+gui.title.reset_day: "&3リセット日を選択"
+gui.title.warning_time: "&3警告時間を選択"
+gui.title.restart_time: "&3リセット時刻を選択"
+gui.title.monthly_day: "&3月次リセット日を選択"
+
+# GUI Menu Items - Main Menu
+gui.main.current_settings: "&6現在の設定"
+gui.main.world: "ワールド: &b{world}"
+gui.main.reset_type: "リセットタイプ: &e{type}"
+gui.main.restart_time: "リセット時刻: &6{time}:00"
+gui.main.warning_time: "警告時間: &c{minutes}分前"
+
+gui.main.change_world: "ワールドを変更"
+gui.main.change_world_desc: "リセットするワールドを選択"
+gui.main.reset_type_menu: "リセットタイプ"
+gui.main.reset_type_desc: "日次、週次、月次"
+gui.main.restart_time_menu: "リセット時刻"
+gui.main.restart_time_desc: "毎日のリセット時刻"
+gui.main.warning_time_menu: "警告時間"
+gui.main.warning_time_desc: "リセット前の警告時間"
+gui.main.enable_region_mode: "リージョンモード有効化"
+gui.main.disable_region_mode: "リージョンモード無効化"
+gui.main.region_mode_desc: "リージョンベースのリセットを切替"
+gui.main.manage_regions: "リージョン管理"
+gui.main.manage_regions_desc: "リセットするリージョンの追加・削除"
+gui.main.force_reset: "強制リセット"
+gui.main.force_reset_desc: "即座にリセット（モードを尊重）"
+gui.main.reload_config: "設定を再読込"
+gui.main.reload_config_desc: "全設定を再読込"
+
+# GUI Menu Items - World Selection
+gui.world.normal: "通常ワールド"
+gui.world.nether: "ネザーワールド"
+gui.world.end: "エンドワールド"
+gui.world.current: "&a{world}&f（現在）"
+
+# GUI Menu Items - Reset Type
+gui.reset_type.daily: "日次リセット"
+gui.reset_type.daily_desc: "毎日リセット"
+gui.reset_type.weekly: "週次リセット"
+gui.reset_type.weekly_desc: "特定の曜日にリセット"
+gui.reset_type.monthly: "月次リセット"
+gui.reset_type.monthly_desc: "特定の日にリセット"
+
+# GUI Menu Items - Reset Day (Weekly)
+gui.reset_day.monday: "月曜日"
+gui.reset_day.tuesday: "火曜日"
+gui.reset_day.wednesday: "水曜日"
+gui.reset_day.thursday: "木曜日"
+gui.reset_day.friday: "金曜日"
+gui.reset_day.saturday: "土曜日"
+gui.reset_day.sunday: "日曜日"
+gui.reset_day.desc: "毎週{day}にリセット"
+
+# GUI Menu Items - Warning Time
+gui.warning_time.no_warning: "警告なし"
+gui.warning_time.no_warning_desc: "警告なしでリセット"
+gui.warning_time.one_minute: "1分前"
+gui.warning_time.one_minute_desc: "1分前に警告"
+gui.warning_time.five_minutes: "5分前"
+gui.warning_time.five_minutes_desc: "5分前に警告"
+gui.warning_time.ten_minutes: "10分前"
+gui.warning_time.ten_minutes_desc: "10分前に警告"
+gui.warning_time.fifteen_minutes: "15分前"
+gui.warning_time.fifteen_minutes_desc: "15分前に警告"
+gui.warning_time.thirty_minutes: "30分前"
+gui.warning_time.thirty_minutes_desc: "30分前に警告"
+
+# GUI Menu Items - Restart Time
+gui.restart_time.hour: "{hour}:00"
+gui.restart_time.desc: "{display_hour}:00 {ampm}"
+
+# GUI Menu Items - Monthly Day
+gui.monthly_day.day: "{day}日"
+gui.monthly_day.desc: "毎月{day}日にリセット"
+
+# GUI Menu Items - Common
+gui.common.back: "戻る"
+gui.common.back_desc: "メインメニューに戻る"
+
+# Messages - GUI Actions
+message.world_set: "&aリソースワールドを設定しました: {world}"
+message.region_mode_enabled: "&aリージョンモードを有効にしました。"
+message.region_mode_disabled: "&eリージョンモードを無効にしました。"
+message.manage_regions_command: "&e/rwrregion add <rx> <rz> または /rwrregion remove <rx> <rz> を使用してください。"
+message.world_reset_initiated: "&aワールドリセットを開始しました！"
+message.config_reloaded: "&a設定を再読込しました！"
+message.warning_time_set: "&a警告時間を{minutes}分前に設定しました！"
+message.restart_time_set: "&aリセット時刻を{hour}:00に設定しました！"
+message.reset_type_daily: "&aリセットタイプを日次に設定しました！"
+message.reset_type_weekly: "&aリセットタイプを週次に設定しました！"
+message.reset_type_monthly: "&aリセットタイプを月次に設定しました！"
+message.monthly_reset_day_set: "&a月次リセット日を{day}日に設定しました！"
+message.weekly_reset_day_set: "&a週次リセット日を{day}に設定しました！"
+
+# Messages - Commands
+message.no_permission: "&c権限がありません。"
+message.player_only: "&cこのコマンドはプレイヤーのみ使用できます。"
+message.command_reloaded: "&aResourcesWorldResetterの設定を再読込しました！"
+message.command_force_reset: "&aリソースワールドの強制リセットを実行中..."
+
+# Messages - Region Commands
+message.region.usage: "&6/rwrregion enable|disable|list|add <rx> <rz>|remove <rx> <rz>|addhere"
+message.region.enabled: "&aリージョンモードを有効にしました。"
+message.region.disabled: "&eリージョンモードを無効にしました。"
+message.region.list: "&bリージョン: {regions}"
+message.region.add_usage: "&c使用方法: /rwrregion add <regionX> <regionZ>"
+message.region.added: "&aリージョン{x},{z}をリセットリストに追加しました。"
+message.region.invalid_coords: "&cregionXとregionZは整数でなければなりません。"
+message.region.remove_usage: "&c使用方法: /rwrregion remove <regionX> <regionZ>"
+message.region.removed: "&eリージョン{x},{z}を削除しました。"
+message.region.player_only: "&caddhereはプレイヤーのみ使用できます。"
+message.region.wrong_world: "&cリソースワールドにいる必要があります: {world}"
+message.region.addhere_success: "&a現在のリージョン{x},{z}を追加しました。"
+message.region.unknown_subcommand: "&c不明なサブコマンドです。"
+
+# Messages - World Reset
+message.reset.warning: "&e[ResourceWorldResetter] リソースワールドは{minutes}分後にリセットされます！"
+message.reset.starting: "&c[ResourceWorldResetter] リソースワールドのリセットを実行中です。ワールド内のプレイヤーは安全な場所にテレポートされます。"
+message.reset.completed: "&a[ResourceWorldResetter] リソースワールドのリセットが{seconds}秒で完了しました（TPS: {tps_before} → {tps_after}）。"
+message.reset.failed: "&c[ResourceWorldResetter] リソースワールドのリセットに失敗しました！サーバーログを確認してください。"
+message.reset.recreated: "&a[ResourceWorldResetter] リソースワールドがリセットされ、使用可能になりました！"
+message.reset.recreate_failed: "&c[ResourceWorldResetter] リソースワールドの再作成に失敗しました！"
+message.reset.player_teleported: "&a[ResourceWorldResetter] リソースワールドがリセットされるため、安全な場所にテレポートされました。"
+
+# Messages - Region Reset
+message.region_reset.starting: "&c[ResourceWorldResetter] 設定されたリージョンのリセットを実行中です。"
+message.region_reset.completed: "&a[ResourceWorldResetter] 設定されたリージョンが再生成されました。"
+message.region_reset.player_moved: "&a[ResourceWorldResetter] リージョンリセットのため移動されました。"

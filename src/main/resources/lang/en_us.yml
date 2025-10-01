@@ -1,0 +1,135 @@
+# English (US) Language File for ResourceWorldResetter
+
+# GUI Menu Titles
+gui.title.main: "&3&lResource World Admin"
+gui.title.world_selection: "&3Select Resource World"
+gui.title.reset_type: "&3Select Reset Type"
+gui.title.reset_day: "&3Select Reset Day"
+gui.title.warning_time: "&3Select Warning Time"
+gui.title.restart_time: "&3Select Restart Hour"
+gui.title.monthly_day: "&3Select Monthly Reset Day"
+
+# GUI Menu Items - Main Menu
+gui.main.current_settings: "&6Current Settings"
+gui.main.world: "World: &b{world}"
+gui.main.reset_type: "Reset Type: &e{type}"
+gui.main.restart_time: "Restart Time: &6{time}:00"
+gui.main.warning_time: "Warning Time: &c{minutes} minutes"
+
+gui.main.change_world: "Change World"
+gui.main.change_world_desc: "Select which world to reset"
+gui.main.reset_type_menu: "Reset Type"
+gui.main.reset_type_desc: "Daily, weekly, or monthly"
+gui.main.restart_time_menu: "Restart Time"
+gui.main.restart_time_desc: "Hour of daily reset"
+gui.main.warning_time_menu: "Warning Time"
+gui.main.warning_time_desc: "Minutes before reset"
+gui.main.enable_region_mode: "Enable Region Mode"
+gui.main.disable_region_mode: "Disable Region Mode"
+gui.main.region_mode_desc: "Toggle region-based resets"
+gui.main.manage_regions: "Manage Regions"
+gui.main.manage_regions_desc: "Add or remove regions to reset"
+gui.main.force_reset: "Force Reset"
+gui.main.force_reset_desc: "Reset immediately (respects mode)"
+gui.main.reload_config: "Reload Config"
+gui.main.reload_config_desc: "Reload all settings"
+
+# GUI Menu Items - World Selection
+gui.world.normal: "Normal world"
+gui.world.nether: "Nether world"
+gui.world.end: "End world"
+gui.world.current: "&a{world}&f (Current)"
+
+# GUI Menu Items - Reset Type
+gui.reset_type.daily: "Daily Reset"
+gui.reset_type.daily_desc: "Reset every day"
+gui.reset_type.weekly: "Weekly Reset"
+gui.reset_type.weekly_desc: "Reset on a specific day of the week"
+gui.reset_type.monthly: "Monthly Reset"
+gui.reset_type.monthly_desc: "Reset on a specific day of the month"
+
+# GUI Menu Items - Reset Day (Weekly)
+gui.reset_day.monday: "Monday"
+gui.reset_day.tuesday: "Tuesday"
+gui.reset_day.wednesday: "Wednesday"
+gui.reset_day.thursday: "Thursday"
+gui.reset_day.friday: "Friday"
+gui.reset_day.saturday: "Saturday"
+gui.reset_day.sunday: "Sunday"
+gui.reset_day.desc: "Reset every {day}"
+
+# GUI Menu Items - Warning Time
+gui.warning_time.no_warning: "No Warning"
+gui.warning_time.no_warning_desc: "Reset without warning"
+gui.warning_time.one_minute: "1 Minute"
+gui.warning_time.one_minute_desc: "Warn 1 minute before reset"
+gui.warning_time.five_minutes: "5 Minutes"
+gui.warning_time.five_minutes_desc: "Warn 5 minutes before reset"
+gui.warning_time.ten_minutes: "10 Minutes"
+gui.warning_time.ten_minutes_desc: "Warn 10 minutes before reset"
+gui.warning_time.fifteen_minutes: "15 Minutes"
+gui.warning_time.fifteen_minutes_desc: "Warn 15 minutes before reset"
+gui.warning_time.thirty_minutes: "30 Minutes"
+gui.warning_time.thirty_minutes_desc: "Warn 30 minutes before reset"
+
+# GUI Menu Items - Restart Time
+gui.restart_time.hour: "{hour}:00"
+gui.restart_time.desc: "{display_hour}:00 {ampm}"
+
+# GUI Menu Items - Monthly Day
+gui.monthly_day.day: "Day {day}"
+gui.monthly_day.desc: "Reset on day {day} of each month"
+
+# GUI Menu Items - Common
+gui.common.back: "Back"
+gui.common.back_desc: "Return to main menu"
+
+# Messages - GUI Actions
+message.world_set: "&aResource world set to: {world}"
+message.region_mode_enabled: "&aRegion mode enabled."
+message.region_mode_disabled: "&eRegion mode disabled."
+message.manage_regions_command: "&eUse /rwrregion add <rx> <rz> or /rwrregion remove <rx> <rz>."
+message.world_reset_initiated: "&aWorld reset initiated!"
+message.config_reloaded: "&aConfiguration reloaded!"
+message.warning_time_set: "&aWarning time set to {minutes} minutes!"
+message.restart_time_set: "&aRestart time set to {hour}:00!"
+message.reset_type_daily: "&aReset type set to daily!"
+message.reset_type_weekly: "&aReset type set to weekly!"
+message.reset_type_monthly: "&aReset type set to monthly!"
+message.monthly_reset_day_set: "&aMonthly reset day set to day {day}!"
+message.weekly_reset_day_set: "&aWeekly reset day set to {day}!"
+
+# Messages - Commands
+message.no_permission: "&cYou do not have permission to use this command."
+message.player_only: "&cThis command can only be used by players."
+message.command_reloaded: "&aResourcesWorldResetter configuration reloaded!"
+message.command_force_reset: "&aForcing resource world reset..."
+
+# Messages - Region Commands
+message.region.usage: "&6/rwrregion enable|disable|list|add <rx> <rz>|remove <rx> <rz>|addhere"
+message.region.enabled: "&aRegion mode enabled."
+message.region.disabled: "&eRegion mode disabled."
+message.region.list: "&bRegions: {regions}"
+message.region.add_usage: "&cUsage: /rwrregion add <regionX> <regionZ>"
+message.region.added: "&aAdded region {x},{z} to reset list."
+message.region.invalid_coords: "&cregionX and regionZ must be integers."
+message.region.remove_usage: "&cUsage: /rwrregion remove <regionX> <regionZ>"
+message.region.removed: "&eRemoved region {x},{z}."
+message.region.player_only: "&cPlayers only for addhere."
+message.region.wrong_world: "&cYou must be in the resource world: {world}"
+message.region.addhere_success: "&aAdded current region {x},{z}."
+message.region.unknown_subcommand: "&cUnknown subcommand."
+
+# Messages - World Reset
+message.reset.warning: "&e[ResourceWorldResetter] Resource world will reset in {minutes} minutes!"
+message.reset.starting: "&c[ResourceWorldResetter] Resource world reset in progress. Players in that world will be teleported to safety."
+message.reset.completed: "&a[ResourceWorldResetter] Resource world reset completed in {seconds} seconds (TPS: {tps_before} → {tps_after})."
+message.reset.failed: "&c[ResourceWorldResetter] Resource world reset failed! Check server logs for details."
+message.reset.recreated: "&a[ResourceWorldResetter] The resource world has been reset and is ready to use!"
+message.reset.recreate_failed: "&c[ResourceWorldResetter] Failed to recreate the resource world!"
+message.reset.player_teleported: "&a[ResourceWorldResetter] You have been teleported to safety - the resource world is being reset."
+
+# Messages - Region Reset
+message.region_reset.starting: "&c[ResourceWorldResetter] Region reset in progress for configured regions."
+message.region_reset.completed: "&a[ResourceWorldResetter] Configured regions have been regenerated."
+message.region_reset.player_moved: "&a[ResourceWorldResetter] You were moved for a region reset."

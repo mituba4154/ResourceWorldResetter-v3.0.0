@@ -1,6 +1,7 @@
 package com.lozaine.ResourceWorldResetter.commands;
 
 import com.lozaine.ResourceWorldResetter.ResourceWorldResetter;
+import com.lozaine.ResourceWorldResetter.lang.LanguageManager;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -10,72 +11,78 @@ import org.bukkit.entity.Player;
 
 public class RwrRegionCommand implements CommandExecutor {
     private final ResourceWorldResetter plugin;
+    private final LanguageManager lang;
 
     public RwrRegionCommand(ResourceWorldResetter plugin) {
         this.plugin = plugin;
+        this.lang = plugin.getLanguageManager();
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("resourceworldresetter.admin")) {
-            sender.sendMessage(ChatColor.RED + "You do not have permission.");
+            sender.sendMessage(lang.getMessage("message.no_permission"));
             return true;
         }
 
         if (args.length == 0) {
-            sender.sendMessage(ChatColor.GOLD + "/rwrregion enable|disable|list|add <rx> <rz>|remove <rx> <rz>|addhere");
+            sender.sendMessage(lang.getMessage("message.region.usage"));
             return true;
         }
 
         switch (args[0].toLowerCase()) {
             case "enable":
                 plugin.setRegionsEnabled(true);
-                sender.sendMessage(ChatColor.GREEN + "Region mode enabled.");
+                sender.sendMessage(lang.getMessage("message.region.enabled"));
                 return true;
             case "disable":
                 plugin.setRegionsEnabled(false);
-                sender.sendMessage(ChatColor.YELLOW + "Region mode disabled.");
+                sender.sendMessage(lang.getMessage("message.region.disabled"));
                 return true;
             case "list":
-                sender.sendMessage(ChatColor.AQUA + "Regions: " + String.join(", ", plugin.getRegionsToReset()));
+                sender.sendMessage(lang.getMessage("message.region.list", 
+                        "{regions}", String.join(", ", plugin.getRegionsToReset())));
                 return true;
             case "add":
                 if (args.length < 3) {
-                    sender.sendMessage(ChatColor.RED + "Usage: /rwrregion add <regionX> <regionZ>");
+                    sender.sendMessage(lang.getMessage("message.region.add_usage"));
                     return true;
                 }
                 try {
                     int rx = Integer.parseInt(args[1]);
                     int rz = Integer.parseInt(args[2]);
                     plugin.addRegionToReset(rx, rz);
-                    sender.sendMessage(ChatColor.GREEN + "Added region " + rx + "," + rz + " to reset list.");
+                    sender.sendMessage(lang.getMessage("message.region.added", 
+                            "{x}", String.valueOf(rx), "{z}", String.valueOf(rz)));
                 } catch (NumberFormatException e) {
-                    sender.sendMessage(ChatColor.RED + "regionX and regionZ must be integers.");
+                    sender.sendMessage(lang.getMessage("message.region.invalid_coords"));
                 }
                 return true;
             case "remove":
                 if (args.length < 3) {
-                    sender.sendMessage(ChatColor.RED + "Usage: /rwrregion remove <regionX> <regionZ>");
+                    sender.sendMessage(lang.getMessage("message.region.remove_usage"));
                     return true;
                 }
                 try {
                     int rx = Integer.parseInt(args[1]);
                     int rz = Integer.parseInt(args[2]);
                     plugin.removeRegionToReset(rx, rz);
-                    sender.sendMessage(ChatColor.YELLOW + "Removed region " + rx + "," + rz + ".");
+                    sender.sendMessage(lang.getMessage("message.region.removed", 
+                            "{x}", String.valueOf(rx), "{z}", String.valueOf(rz)));
                 } catch (NumberFormatException e) {
-                    sender.sendMessage(ChatColor.RED + "regionX and regionZ must be integers.");
+                    sender.sendMessage(lang.getMessage("message.region.invalid_coords"));
                 }
                 return true;
             case "addhere":
                 if (!(sender instanceof Player)) {
-                    sender.sendMessage(ChatColor.RED + "Players only for addhere.");
+                    sender.sendMessage(lang.getMessage("message.region.player_only"));
                     return true;
                 }
                 Player player = (Player) sender;
                 World world = player.getWorld();
                 if (!world.getName().equalsIgnoreCase(plugin.getWorldName())) {
-                    sender.sendMessage(ChatColor.RED + "You must be in the resource world: " + plugin.getWorldName());
+                    sender.sendMessage(lang.getMessage("message.region.wrong_world", 
+                            "{world}", plugin.getWorldName()));
                     return true;
                 }
                 int chunkX = player.getLocation().getBlockX() >> 4;
@@ -83,10 +90,11 @@ public class RwrRegionCommand implements CommandExecutor {
                 int regionX = chunkX >> 5;
                 int regionZ = chunkZ >> 5;
                 plugin.addRegionToReset(regionX, regionZ);
-                sender.sendMessage(ChatColor.GREEN + "Added current region " + regionX + "," + regionZ + ".");
+                sender.sendMessage(lang.getMessage("message.region.addhere_success", 
+                        "{x}", String.valueOf(regionX), "{z}", String.valueOf(regionZ)));
                 return true;
             default:
-                sender.sendMessage(ChatColor.RED + "Unknown subcommand.");
+                sender.sendMessage(lang.getMessage("message.region.unknown_subcommand"));
                 return true;
         }
     }

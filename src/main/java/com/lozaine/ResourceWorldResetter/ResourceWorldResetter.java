@@ -2,6 +2,7 @@ package com.lozaine.ResourceWorldResetter;
 
 import com.lozaine.ResourceWorldResetter.gui.AdminGUI;
 import com.lozaine.ResourceWorldResetter.gui.AdminGUIListener;
+import com.lozaine.ResourceWorldResetter.lang.LanguageManager;
 import com.lozaine.ResourceWorldResetter.utils.LogUtil;
 import com.onarandombox.MultiverseCore.MultiverseCore;
 import com.onarandombox.MultiverseCore.api.MVWorldManager;
@@ -35,6 +36,7 @@ public class ResourceWorldResetter extends JavaPlugin {
     private AdminGUI adminGUI;
     private int warningTaskId = -1;
     private int resetTaskId = -1;
+    private LanguageManager languageManager;
 
     public String getWorldName() { return this.worldName; }
     public String getResetType() { return this.resetType; }
@@ -43,6 +45,7 @@ public class ResourceWorldResetter extends JavaPlugin {
     public int getResetDay() { return this.resetDay; }
     public boolean isRegionsEnabled() { return this.regionsEnabled; }
     public java.util.Set<String> getRegionsToReset() { return java.util.Collections.unmodifiableSet(regionsToReset); }
+    public LanguageManager getLanguageManager() { return this.languageManager; }
 
     public void setWorldName(String name) {
         this.worldName = name;
@@ -118,6 +121,11 @@ public class ResourceWorldResetter extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         LogUtil.init(this);
+        
+        // Load language first
+        String language = getConfig().getString("language", "en_us");
+        languageManager = new LanguageManager(this, language);
+        
         core = (MultiverseCore) Bukkit.getPluginManager().getPlugin("Multiverse-Core");
 
         if (core == null) {
@@ -174,7 +182,7 @@ public class ResourceWorldResetter extends JavaPlugin {
                         adminGUI.openMainMenu(player);
                         return true;
                     } else {
-                        sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                        sender.sendMessage(languageManager.getMessage("message.player_only"));
                         return true;
                     }
 
@@ -182,17 +190,17 @@ public class ResourceWorldResetter extends JavaPlugin {
                     reloadConfig();
                     loadConfig();
                     scheduleDailyReset(); // Re-schedule resets after reload
-                    sender.sendMessage(ChatColor.GREEN + "ResourcesWorldResetter configuration reloaded!");
+                    sender.sendMessage(languageManager.getMessage("message.command_reloaded"));
                     return true;
 
                 // Keeping resetworld for backward compatibility
                 case "resetworld":
-                    sender.sendMessage(ChatColor.GREEN + "Forcing resource world reset...");
+                    sender.sendMessage(languageManager.getMessage("message.command_force_reset"));
                     resetResourceWorld(false);
                     return true;
             }
         } else {
-            sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            sender.sendMessage(languageManager.getMessage("message.no_permission"));
             return true;
         }
         return false;
@@ -253,8 +261,8 @@ public class ResourceWorldResetter extends JavaPlugin {
                         " (" + (warningDelayTicks/20/60) + " minutes from now)", Level.INFO);
 
                 warningTaskId = Bukkit.getScheduler().runTaskLater(this, () -> {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "[ResourceWorldResetter] " +
-                            "Resource world will reset in " + resetWarningTime + " minutes!");
+                    Bukkit.broadcastMessage(languageManager.getMessage("message.reset.warning", 
+                            "{minutes}", String.valueOf(resetWarningTime)));
                     LogUtil.log(getLogger(), "Broadcast reset warning to players", Level.INFO);
                 }, warningDelayTicks).getTaskId();
             }
@@ -309,8 +317,7 @@ public class ResourceWorldResetter extends JavaPlugin {
         long startTime = System.currentTimeMillis();
 
         LogUtil.log(getLogger(), "Starting world reset process for " + worldName, Level.INFO);
-        Bukkit.broadcastMessage(ChatColor.RED + "[ResourceWorldResetter] " +
-                "Resource world reset in progress. Players in that world will be teleported to safety.");
+        Bukkit.broadcastMessage(languageManager.getMessage("message.reset.starting"));
 
         teleportPlayersSafely(world);
 
@@ -321,8 +328,7 @@ public class ResourceWorldResetter extends JavaPlugin {
             // Try forcing world unload if normal unload fails
             if (!worldManager.unloadWorld(worldName, true)) {
                 LogUtil.log(getLogger(), "Forced unload also failed. Aborting reset.", Level.SEVERE);
-                Bukkit.broadcastMessage(ChatColor.RED + "[ResourceWorldResetter] " +
-                        "Failed to reset resource world. Please notify an administrator.");
+                Bukkit.broadcastMessage(languageManager.getMessage("message.reset.failed"));
                 return;
             }
         }
@@ -337,9 +343,10 @@ public class ResourceWorldResetter extends JavaPlugin {
                     recreateWorld(worldManager);
                     long duration = System.currentTimeMillis() - startTime;
                     double tpsAfter = getServerTPS();
-                    Bukkit.broadcastMessage(ChatColor.GREEN + "[ResourceWorldResetter] " +
-                            "Resource world reset completed in " + (duration/1000) + " seconds (TPS: " +
-                            String.format("%.2f", tpsBefore) + " → " + String.format("%.2f", tpsAfter) + ").");
+                    Bukkit.broadcastMessage(languageManager.getMessage("message.reset.completed",
+                            "{seconds}", String.valueOf(duration/1000),
+                            "{tps_before}", String.format("%.2f", tpsBefore),
+                            "{tps_after}", String.format("%.2f", tpsAfter)));
                     LogUtil.log(getLogger(), "Resource world reset completed in " + duration + "ms", Level.INFO);
 
                     // Reschedule for next time
@@ -350,8 +357,7 @@ public class ResourceWorldResetter extends JavaPlugin {
             } else {
                 LogUtil.log(getLogger(), "Failed to delete world folder: " + worldName, Level.SEVERE);
                 Bukkit.getScheduler().runTask(this, () -> {
-                    Bukkit.broadcastMessage(ChatColor.RED + "[ResourceWorldResetter] " +
-                            "Resource world reset failed! Check server logs for details.");
+                    Bukkit.broadcastMessage(languageManager.getMessage("message.reset.failed"));
                 });
             }
         });
@@ -359,7 +365,7 @@ public class ResourceWorldResetter extends JavaPlugin {
 
     private void performRegionReset(World world) {
         LogUtil.log(getLogger(), "Starting region-based reset for " + worldName, Level.INFO);
-        Bukkit.broadcastMessage(ChatColor.RED + "[ResourceWorldResetter] Region reset in progress for configured regions.");
+        Bukkit.broadcastMessage(languageManager.getMessage("message.region_reset.starting"));
 
         // Teleport players out of affected regions to world spawn
         teleportPlayersOutOfRegions(world);
@@ -376,7 +382,7 @@ public class ResourceWorldResetter extends JavaPlugin {
             }
         }
 
-        Bukkit.broadcastMessage(ChatColor.GREEN + "[ResourceWorldResetter] Configured regions have been regenerated.");
+        Bukkit.broadcastMessage(languageManager.getMessage("message.region_reset.completed"));
         LogUtil.log(getLogger(), "Region-based reset completed", Level.INFO);
     }
 
@@ -392,7 +398,7 @@ public class ResourceWorldResetter extends JavaPlugin {
             String key = regionX + "," + regionZ;
             if (regionsToReset.contains(key)) {
                 player.teleport(spawn);
-                player.sendMessage(ChatColor.GREEN + "[ResourceWorldResetter] You were moved for a region reset.");
+                player.sendMessage(languageManager.getMessage("message.region_reset.player_moved"));
             }
         }
     }
@@ -455,8 +461,7 @@ public class ResourceWorldResetter extends JavaPlugin {
 
         for (Player player : world.getPlayers()) {
             player.teleport(spawn);
-            player.sendMessage(ChatColor.GREEN + "[ResourceWorldResetter] " +
-                    "You have been teleported to safety - the resource world is being reset.");
+            player.sendMessage(languageManager.getMessage("message.reset.player_teleported"));
             LogUtil.log(getLogger(), "Teleported " + player.getName() + " out of resource world", Level.INFO);
         }
     }
@@ -472,12 +477,10 @@ public class ResourceWorldResetter extends JavaPlugin {
         );
 
         if (success) {
-            Bukkit.broadcastMessage(ChatColor.GREEN + "[ResourceWorldResetter] " +
-                    "The resource world has been reset and is ready to use!");
+            Bukkit.broadcastMessage(languageManager.getMessage("message.reset.recreated"));
             LogUtil.log(getLogger(), "World recreation successful", Level.INFO);
         } else {
-            Bukkit.broadcastMessage(ChatColor.RED + "[ResourceWorldResetter] " +
-                    "Failed to recreate the resource world!");
+            Bukkit.broadcastMessage(languageManager.getMessage("message.reset.recreate_failed"));
             LogUtil.log(getLogger(), "Failed to recreate world: " + worldName, Level.SEVERE);
         }
     }
@@ -513,6 +516,12 @@ public class ResourceWorldResetter extends JavaPlugin {
         regionsToReset.clear();
         java.util.List<String> list = getConfig().getStringList("regions.list");
         if (list != null) regionsToReset.addAll(list);
+        
+        // Reload language if changed
+        String language = getConfig().getString("language", "en_us");
+        if (languageManager != null) {
+            languageManager.reload(language);
+        }
 
         LogUtil.log(getLogger(), "Configuration loaded: worldName=" + worldName +
                 ", resetType=" + resetType + ", restartTime=" + restartTime +
