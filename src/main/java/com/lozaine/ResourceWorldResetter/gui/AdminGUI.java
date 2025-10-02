@@ -2,6 +2,8 @@ package com.lozaine.ResourceWorldResetter.gui;
 
 import com.lozaine.ResourceWorldResetter.ResourceWorldResetter;
 import com.lozaine.ResourceWorldResetter.lang.LanguageManager;
+import com.onarandombox.MultiverseCore.MultiverseCore;
+import com.onarandombox.MultiverseCore.api.MultiverseWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -18,6 +20,7 @@ public class AdminGUI implements Listener {
     private final ResourceWorldResetter plugin;
     private final LanguageManager lang;
     private final Map<UUID, GuiType> activeGuis = new HashMap<>();
+    private final MultiverseCore mvCore;
 
     public enum GuiType {
         MAIN_MENU,
@@ -32,6 +35,7 @@ public class AdminGUI implements Listener {
     public AdminGUI(ResourceWorldResetter plugin) {
         this.plugin = plugin;
         this.lang = plugin.getLanguageManager();
+        this.mvCore = (MultiverseCore) Bukkit.getPluginManager().getPlugin("Multiverse-Core");
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -81,58 +85,39 @@ public class AdminGUI implements Listener {
 
         int slot = 0;
 
-        // Get all worlds from Multiverse using reflection
-        Object mvCore = plugin.getMultiverseCore();
+        // Get all worlds from Multiverse
         if (mvCore != null) {
-            try {
-                // Get MVWorldManager
-                java.lang.reflect.Method getManagerMethod = mvCore.getClass().getMethod("getMVWorldManager");
-                Object worldManager = getManagerMethod.invoke(mvCore);
-                
-                // Get MVWorlds collection
-                java.lang.reflect.Method getWorldsMethod = worldManager.getClass().getMethod("getMVWorlds");
-                Collection<?> mvWorlds = (Collection<?>) getWorldsMethod.invoke(worldManager);
-                
-                for (Object mvWorld : mvWorlds) {
-                    // Get CraftBukkit world
-                    java.lang.reflect.Method getCBWorldMethod = mvWorld.getClass().getMethod("getCBWorld");
-                    World world = (World) getCBWorldMethod.invoke(mvWorld);
-                    
-                    if (world != null) {
-                        Material icon = Material.GRASS_BLOCK;
-                        String description = lang.getMessage("gui.world.normal");
+            Collection<MultiverseWorld> mvWorlds = mvCore.getMVWorldManager().getMVWorlds();
+            for (MultiverseWorld mvWorld : mvWorlds) {
+                World world = mvWorld.getCBWorld();
+                if (world != null) {
+                    Material icon = Material.GRASS_BLOCK;
+                    String description = lang.getMessage("gui.world.normal");
 
-                        // Choose appropriate icon based on world type
-                        if (world.getEnvironment() == World.Environment.NETHER) {
-                            icon = Material.NETHERRACK;
-                            description = lang.getMessage("gui.world.nether");
-                        } else if (world.getEnvironment() == World.Environment.THE_END) {
-                            icon = Material.END_STONE;
-                            description = lang.getMessage("gui.world.end");
-                        }
-
-                        // If this is the current resource world, highlight it
-                        String worldName = world.getName();
-                        String displayName = worldName;
-                        if (worldName.equals(plugin.getWorldName())) {
-                            displayName = lang.getMessage("gui.world.current", "{world}", worldName);
-                        }
-
-                        gui.setItem(slot++, createGuiItem(icon, displayName, description));
-
-                        // Ensure we don't exceed inventory size
-                        if (slot >= 45) break;
+                    // Choose appropriate icon based on world type
+                    if (world.getEnvironment() == World.Environment.NETHER) {
+                        icon = Material.NETHERRACK;
+                        description = lang.getMessage("gui.world.nether");
+                    } else if (world.getEnvironment() == World.Environment.THE_END) {
+                        icon = Material.END_STONE;
+                        description = lang.getMessage("gui.world.end");
                     }
+
+                    // If this is the current resource world, highlight it
+                    String worldName = world.getName();
+                    String displayName = worldName;
+                    if (worldName.equals(plugin.getWorldName())) {
+                        displayName = lang.getMessage("gui.world.current", "{world}", worldName);
+                    }
+
+                    gui.setItem(slot++, createGuiItem(icon, displayName, description));
+
+                    // Ensure we don't exceed inventory size
+                    if (slot >= 45) break;
                 }
-            } catch (Exception e) {
-                // Fall back to Bukkit worlds if reflection fails
-                plugin.getLogger().warning("Failed to get Multiverse worlds, using Bukkit API: " + e.getMessage());
-                mvCore = null;
             }
-        }
-        
-        // Fallback if Multiverse isn't available or reflection failed
-        if (mvCore == null) {
+        } else {
+            // Fallback if Multiverse isn't available
             for (World world : Bukkit.getWorlds()) {
                 Material icon = Material.GRASS_BLOCK;
                 String description = lang.getMessage("gui.world.normal");

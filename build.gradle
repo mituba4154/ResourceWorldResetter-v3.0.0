@@ -10,16 +10,17 @@ repositories {
     maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
     maven { url 'https://repo.onarandombox.com/content/groups/public/' }
     maven { url 'https://repo.codemc.org/repository/maven-public' }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
-    compileOnly 'com.onarandombox.multiversecore:Multiverse-Core:5.2.1'
+    compileOnly 'com.onarandombox.multiversecore:Multiverse-Core:4.3.1'
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.withType(JavaCompile) {
