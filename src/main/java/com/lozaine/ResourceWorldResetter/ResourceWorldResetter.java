@@ -4,12 +4,11 @@ import com.lozaine.ResourceWorldResetter.gui.AdminGUI;
 import com.lozaine.ResourceWorldResetter.gui.AdminGUIListener;
 import com.lozaine.ResourceWorldResetter.lang.LanguageManager;
 import com.lozaine.ResourceWorldResetter.utils.LogUtil;
-import com.onarandombox.MultiverseCore.MultiverseCore;
-import com.onarandombox.MultiverseCore.api.MVWorldManager;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.lozaine.ResourceWorldResetter.metrics.Metrics;
@@ -21,11 +20,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
-import static com.onarandombox.MultiverseCore.utils.FileUtils.deleteFolder;
-
 public class ResourceWorldResetter extends JavaPlugin {
     private String worldName;
-    private MultiverseCore core;
+    private Object multiverseCore; // Changed from MultiverseCore to Object for compatibility
     private int restartTime;
     private int resetWarningTime;
     private String resetType;
@@ -46,6 +43,106 @@ public class ResourceWorldResetter extends JavaPlugin {
     public boolean isRegionsEnabled() { return this.regionsEnabled; }
     public java.util.Set<String> getRegionsToReset() { return java.util.Collections.unmodifiableSet(regionsToReset); }
     public LanguageManager getLanguageManager() { return this.languageManager; }
+    public Object getMultiverseCore() { return this.multiverseCore; }
+    
+    // Helper method to check if Multiverse-Core is available
+    private boolean hasMultiverseCore() {
+        return multiverseCore != null;
+    }
+    
+    // Helper method to get MVWorldManager using reflection
+    private Object getMVWorldManager() {
+        if (!hasMultiverseCore()) {
+            return null;
+        }
+        try {
+            java.lang.reflect.Method method = multiverseCore.getClass().getMethod("getMVWorldManager");
+            return method.invoke(multiverseCore);
+        } catch (Exception e) {
+            LogUtil.log(getLogger(), "Failed to get MVWorldManager: " + e.getMessage(), Level.WARNING);
+            return null;
+        }
+    }
+    
+    // Helper method to check if a world is managed by Multiverse using reflection
+    private boolean isMVWorld(String worldName) {
+        Object worldManager = getMVWorldManager();
+        if (worldManager == null) {
+            return false;
+        }
+        try {
+            java.lang.reflect.Method method = worldManager.getClass().getMethod("isMVWorld", String.class);
+            return (Boolean) method.invoke(worldManager, worldName);
+        } catch (Exception e) {
+            LogUtil.log(getLogger(), "Failed to check if world is MV world: " + e.getMessage(), Level.WARNING);
+            return false;
+        }
+    }
+    
+    // Helper method to add a world using Multiverse via reflection
+    private boolean addMVWorld(String worldName, World.Environment environment, String seed, 
+                               WorldType type, boolean generateStructures, String generator) {
+        Object worldManager = getMVWorldManager();
+        if (worldManager == null) {
+            return false;
+        }
+        try {
+            java.lang.reflect.Method method = worldManager.getClass().getMethod("addWorld", 
+                    String.class, World.Environment.class, String.class, 
+                    WorldType.class, Boolean.class, String.class);
+            return (Boolean) method.invoke(worldManager, worldName, environment, seed, type, generateStructures, generator);
+        } catch (Exception e) {
+            LogUtil.log(getLogger(), "Failed to add MV world: " + e.getMessage(), Level.WARNING);
+            return false;
+        }
+    }
+    
+    // Helper method to unload a world using Multiverse via reflection
+    private boolean unloadMVWorld(String worldName) {
+        Object worldManager = getMVWorldManager();
+        if (worldManager == null) {
+            return false;
+        }
+        try {
+            java.lang.reflect.Method method = worldManager.getClass().getMethod("unloadWorld", String.class);
+            return (Boolean) method.invoke(worldManager, worldName);
+        } catch (Exception e) {
+            LogUtil.log(getLogger(), "Failed to unload MV world: " + e.getMessage(), Level.WARNING);
+            return false;
+        }
+    }
+    
+    // Helper method to force unload a world using Multiverse via reflection
+    private boolean unloadMVWorld(String worldName, boolean removeFromConfig) {
+        Object worldManager = getMVWorldManager();
+        if (worldManager == null) {
+            return false;
+        }
+        try {
+            java.lang.reflect.Method method = worldManager.getClass().getMethod("unloadWorld", String.class, boolean.class);
+            return (Boolean) method.invoke(worldManager, worldName, removeFromConfig);
+        } catch (Exception e) {
+            LogUtil.log(getLogger(), "Failed to force unload MV world: " + e.getMessage(), Level.WARNING);
+            return false;
+        }
+    }
+    
+    // Helper method to delete a folder (from MV FileUtils or our own implementation)
+    private boolean deleteFolder(File folder) {
+        if (folder.exists()) {
+            File[] files = folder.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        deleteFolder(file);
+                    } else {
+                        file.delete();
+                    }
+                }
+            }
+        }
+        return folder.delete();
+    }
 
     public void setWorldName(String name) {
         this.worldName = name;
@@ -126,12 +223,15 @@ public class ResourceWorldResetter extends JavaPlugin {
         String language = getConfig().getString("language", "en_us");
         languageManager = new LanguageManager(this, language);
         
-        core = (MultiverseCore) Bukkit.getPluginManager().getPlugin("Multiverse-Core");
-
-        if (core == null) {
-            LogUtil.log(getLogger(), "Multiverse-Core not found! Disabling plugin.", Level.SEVERE);
-            Bukkit.getPluginManager().disablePlugin(this);
-            return;
+        // Try to get Multiverse-Core with better error handling
+        Plugin mvPlugin = Bukkit.getPluginManager().getPlugin("Multiverse-Core");
+        if (mvPlugin != null && mvPlugin.isEnabled()) {
+            multiverseCore = mvPlugin;
+            LogUtil.log(getLogger(), "Multiverse-Core " + mvPlugin.getDescription().getVersion() + " found and integrated!", Level.INFO);
+        } else {
+            LogUtil.log(getLogger(), "Multiverse-Core not found! Plugin will have limited functionality.", Level.WARNING);
+            LogUtil.log(getLogger(), "Some features like automatic world creation may not work properly.", Level.WARNING);
+            multiverseCore = null;
         }
 
         if (getConfig().getBoolean("metrics.enabled", true)) {
@@ -141,6 +241,8 @@ public class ResourceWorldResetter extends JavaPlugin {
             metrics.addCustomChart(new Metrics.SimplePie("reset_hour", () -> String.valueOf(this.restartTime)));
             metrics.addCustomChart(new Metrics.SimplePie("warning_time", () -> String.valueOf(this.resetWarningTime)));
             metrics.addCustomChart(new Metrics.SimplePie("server_version", () -> Bukkit.getBukkitVersion()));
+            metrics.addCustomChart(new Metrics.SimplePie("multiverse_version", () -> 
+                    mvPlugin != null ? mvPlugin.getDescription().getVersion() : "Not installed"));
             LogUtil.log(getLogger(), "bStats metrics enabled", Level.INFO);
         } else {
             LogUtil.log(getLogger(), "bStats metrics disabled by configuration", Level.INFO);
@@ -321,12 +423,17 @@ public class ResourceWorldResetter extends JavaPlugin {
 
         teleportPlayersSafely(world);
 
-        MVWorldManager worldManager = core.getMVWorldManager();
-        if (!worldManager.unloadWorld(worldName)) {
+        if (!hasMultiverseCore()) {
+            LogUtil.log(getLogger(), "Multiverse-Core not available. Cannot perform reset.", Level.SEVERE);
+            Bukkit.broadcastMessage(languageManager.getMessage("message.reset.failed"));
+            return;
+        }
+
+        if (!unloadMVWorld(worldName)) {
             LogUtil.log(getLogger(), "Failed to unload world: " + worldName + ". Retrying with forced unload.", Level.WARNING);
 
             // Try forcing world unload if normal unload fails
-            if (!worldManager.unloadWorld(worldName, true)) {
+            if (!unloadMVWorld(worldName, true)) {
                 LogUtil.log(getLogger(), "Forced unload also failed. Aborting reset.", Level.SEVERE);
                 Bukkit.broadcastMessage(languageManager.getMessage("message.reset.failed"));
                 return;
@@ -340,7 +447,7 @@ public class ResourceWorldResetter extends JavaPlugin {
             if (deleteFolder(worldFolder)) {
                 Bukkit.getScheduler().runTask(this, () -> {
                     LogUtil.log(getLogger(), "World folder deleted, recreating world", Level.INFO);
-                    recreateWorld(worldManager);
+                    recreateWorld();
                     long duration = System.currentTimeMillis() - startTime;
                     double tpsAfter = getServerTPS();
                     Bukkit.broadcastMessage(languageManager.getMessage("message.reset.completed",
@@ -466,8 +573,8 @@ public class ResourceWorldResetter extends JavaPlugin {
         }
     }
 
-    public void recreateWorld(MVWorldManager worldManager) {
-        boolean success = worldManager.addWorld(
+    public void recreateWorld() {
+        boolean success = addMVWorld(
                 worldName,
                 World.Environment.NORMAL,
                 null,
@@ -486,10 +593,30 @@ public class ResourceWorldResetter extends JavaPlugin {
     }
 
     public void ensureResourceWorldExists() {
-        MVWorldManager worldManager = core.getMVWorldManager();
-        if (!worldManager.isMVWorld(worldName)) {
+        if (!hasMultiverseCore()) {
+            LogUtil.log(getLogger(), "Multiverse-Core not available. Cannot ensure world exists.", Level.WARNING);
+            // Try to create world using Bukkit API as fallback
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) {
+                LogUtil.log(getLogger(), "World doesn't exist: " + worldName + ". Creating with Bukkit API.", Level.INFO);
+                WorldCreator creator = new WorldCreator(worldName);
+                creator.environment(World.Environment.NORMAL);
+                creator.type(WorldType.NORMAL);
+                world = creator.createWorld();
+                if (world != null) {
+                    LogUtil.log(getLogger(), "Created world using Bukkit API: " + worldName, Level.INFO);
+                } else {
+                    LogUtil.log(getLogger(), "Failed to create world: " + worldName, Level.SEVERE);
+                }
+            } else {
+                LogUtil.log(getLogger(), "World exists: " + worldName, Level.INFO);
+            }
+            return;
+        }
+        
+        if (!isMVWorld(worldName)) {
             LogUtil.log(getLogger(), "Resource world doesn't exist, creating: " + worldName, Level.INFO);
-            boolean success = worldManager.addWorld(
+            boolean success = addMVWorld(
                     worldName,
                     World.Environment.NORMAL,
                     null,
