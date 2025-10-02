@@ -2,8 +2,8 @@ package com.lozaine.ResourceWorldResetter.gui;
 
 import com.lozaine.ResourceWorldResetter.ResourceWorldResetter;
 import com.lozaine.ResourceWorldResetter.lang.LanguageManager;
-import com.onarandombox.MultiverseCore.MultiverseCore;
-import com.onarandombox.MultiverseCore.api.MultiverseWorld;
+import org.mvplugins.multiverse.core.MultiverseCore;
+import org.mvplugins.multiverse.core.world.MultiverseWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -87,9 +87,10 @@ public class AdminGUI implements Listener {
 
         // Get all worlds from Multiverse
         if (mvCore != null) {
-            Collection<MultiverseWorld> mvWorlds = mvCore.getMVWorldManager().getMVWorlds();
+            Collection<MultiverseWorld> mvWorlds = mvCore.getApi().getWorldManager().getWorlds();
             for (MultiverseWorld mvWorld : mvWorlds) {
-                World world = mvWorld.getCBWorld();
+                // Get the Bukkit world from the loaded MV world
+                org.bukkit.World world = Bukkit.getWorld(mvWorld.getName());
                 if (world != null) {
                     Material icon = Material.GRASS_BLOCK;
                     String description = lang.getMessage("gui.world.normal");
