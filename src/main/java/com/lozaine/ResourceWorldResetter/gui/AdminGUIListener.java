@@ -1,5 +1,6 @@
 package com.lozaine.ResourceWorldResetter.gui;
 
+import com.lozaine.ResourceWorldResetter.lang.LanguageManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -14,10 +15,12 @@ import com.lozaine.ResourceWorldResetter.gui.AdminGUI.GuiType;
 public class AdminGUIListener implements Listener {
     private final ResourceWorldResetter plugin;
     private final AdminGUI adminGUI;
+    private final LanguageManager lang;
 
     public AdminGUIListener(ResourceWorldResetter plugin, AdminGUI adminGUI) {
         this.plugin = plugin;
         this.adminGUI = adminGUI;
+        this.lang = plugin.getLanguageManager();
     }
 
     @EventHandler
@@ -62,89 +65,97 @@ public class AdminGUIListener implements Listener {
 
     // New method to handle world selection
     private void handleWorldSelectionMenuClick(Player player, String itemName) {
-        if (itemName.equals("Back")) {
+        String backText = ChatColor.stripColor(lang.getMessage("gui.common.back"));
+        if (itemName.equals(backText)) {
             adminGUI.openMainMenu(player);
             return;
         }
 
         // Extract the world name (remove color codes and (Current) suffix if present)
         String worldName = itemName;
-        if (worldName.contains(" (Current)")) {
-            worldName = worldName.substring(0, worldName.indexOf(" (Current)"));
+        if (worldName.contains(" (")) {
+            worldName = worldName.substring(0, worldName.indexOf(" ("));
         }
 
         // Update the world name in plugin config
         plugin.setWorldName(worldName);
-        player.sendMessage(ChatColor.GREEN + "Resource world set to: " + worldName);
+        player.sendMessage(lang.getMessage("message.world_set", "{world}", worldName));
         adminGUI.openMainMenu(player);
     }
 
     private void handleMainMenuClick(Player player, String itemName) {
-        switch (itemName) {
-            case "Enable Region Mode":
-                plugin.setRegionsEnabled(true);
-                player.sendMessage(ChatColor.GREEN + "Region mode enabled.");
-                adminGUI.openMainMenu(player);
-                break;
-            case "Disable Region Mode":
-                plugin.setRegionsEnabled(false);
-                player.sendMessage(ChatColor.YELLOW + "Region mode disabled.");
-                adminGUI.openMainMenu(player);
-                break;
-            case "Manage Regions":
-                player.sendMessage(ChatColor.YELLOW + "Use /rwrregion add <rx> <rz> or /rwrregion remove <rx> <rz>.");
-                break;
-            case "Change World":
-                adminGUI.openWorldSelectionMenu(player);
-                break;
-            case "Reset Type":
-                adminGUI.openResetTypeMenu(player);
-                break;
-            case "Restart Time":
-                adminGUI.openRestartTimeMenu(player);
-                break;
-            case "Warning Time":
-                adminGUI.openWarningTimeMenu(player);
-                break;
-            case "Force Reset":
-                player.closeInventory();
-                plugin.resetResourceWorld();
-                player.sendMessage(ChatColor.GREEN + "World reset initiated!");
-                break;
-            case "Reload Config":
-                player.closeInventory();
-                plugin.reloadConfig();
-                plugin.loadConfig();
-                player.sendMessage(ChatColor.GREEN + "Configuration reloaded!");
-                break;
+        String enableRegion = ChatColor.stripColor(lang.getMessage("gui.main.enable_region_mode"));
+        String disableRegion = ChatColor.stripColor(lang.getMessage("gui.main.disable_region_mode"));
+        String manageRegions = ChatColor.stripColor(lang.getMessage("gui.main.manage_regions"));
+        String changeWorld = ChatColor.stripColor(lang.getMessage("gui.main.change_world"));
+        String resetType = ChatColor.stripColor(lang.getMessage("gui.main.reset_type_menu"));
+        String restartTime = ChatColor.stripColor(lang.getMessage("gui.main.restart_time_menu"));
+        String warningTime = ChatColor.stripColor(lang.getMessage("gui.main.warning_time_menu"));
+        String forceReset = ChatColor.stripColor(lang.getMessage("gui.main.force_reset"));
+        String reloadConfig = ChatColor.stripColor(lang.getMessage("gui.main.reload_config"));
+
+        if (itemName.equals(enableRegion)) {
+            plugin.setRegionsEnabled(true);
+            player.sendMessage(lang.getMessage("message.region_mode_enabled"));
+            adminGUI.openMainMenu(player);
+        } else if (itemName.equals(disableRegion)) {
+            plugin.setRegionsEnabled(false);
+            player.sendMessage(lang.getMessage("message.region_mode_disabled"));
+            adminGUI.openMainMenu(player);
+        } else if (itemName.equals(manageRegions)) {
+            player.sendMessage(lang.getMessage("message.manage_regions_command"));
+        } else if (itemName.equals(changeWorld)) {
+            adminGUI.openWorldSelectionMenu(player);
+        } else if (itemName.equals(resetType)) {
+            adminGUI.openResetTypeMenu(player);
+        } else if (itemName.equals(restartTime)) {
+            adminGUI.openRestartTimeMenu(player);
+        } else if (itemName.equals(warningTime)) {
+            adminGUI.openWarningTimeMenu(player);
+        } else if (itemName.equals(forceReset)) {
+            player.closeInventory();
+            plugin.resetResourceWorld();
+            player.sendMessage(lang.getMessage("message.world_reset_initiated"));
+        } else if (itemName.equals(reloadConfig)) {
+            player.closeInventory();
+            plugin.reloadConfig();
+            plugin.loadConfig();
+            player.sendMessage(lang.getMessage("message.config_reloaded"));
         }
     }
 
     private void handleWarningTimeMenuClick(Player player, String itemName) {
-        if (itemName.equals("Back")) {
+        String backText = ChatColor.stripColor(lang.getMessage("gui.common.back"));
+        if (itemName.equals(backText)) {
             adminGUI.openMainMenu(player);
             return;
         }
 
-        int minutes = switch (itemName) {
-            case "No Warning" -> 0;
-            case "1 Minute" -> 1;
-            case "5 Minutes" -> 5;
-            case "10 Minutes" -> 10;
-            case "15 Minutes" -> 15;
-            case "30 Minutes" -> 30;
-            default -> -1;
-        };
+        String noWarning = ChatColor.stripColor(lang.getMessage("gui.warning_time.no_warning"));
+        String oneMinute = ChatColor.stripColor(lang.getMessage("gui.warning_time.one_minute"));
+        String fiveMinutes = ChatColor.stripColor(lang.getMessage("gui.warning_time.five_minutes"));
+        String tenMinutes = ChatColor.stripColor(lang.getMessage("gui.warning_time.ten_minutes"));
+        String fifteenMinutes = ChatColor.stripColor(lang.getMessage("gui.warning_time.fifteen_minutes"));
+        String thirtyMinutes = ChatColor.stripColor(lang.getMessage("gui.warning_time.thirty_minutes"));
+
+        int minutes = -1;
+        if (itemName.equals(noWarning)) minutes = 0;
+        else if (itemName.equals(oneMinute)) minutes = 1;
+        else if (itemName.equals(fiveMinutes)) minutes = 5;
+        else if (itemName.equals(tenMinutes)) minutes = 10;
+        else if (itemName.equals(fifteenMinutes)) minutes = 15;
+        else if (itemName.equals(thirtyMinutes)) minutes = 30;
 
         if (minutes != -1) {
             plugin.setResetWarningTime(minutes);
-            player.sendMessage(ChatColor.GREEN + "Warning time set to " + minutes + " minutes!");
+            player.sendMessage(lang.getMessage("message.warning_time_set", "{minutes}", String.valueOf(minutes)));
         }
         adminGUI.openMainMenu(player);
     }
 
     private void handleRestartTimeMenuClick(Player player, String itemName) {
-        if (itemName.equals("Back")) {
+        String backText = ChatColor.stripColor(lang.getMessage("gui.common.back"));
+        if (itemName.equals(backText)) {
             adminGUI.openMainMenu(player);
             return;
         }
@@ -153,7 +164,7 @@ public class AdminGUIListener implements Listener {
             int hour = Integer.parseInt(itemName.split(":")[0]);
             if (hour >= 0 && hour <= 23) {
                 plugin.setRestartTime(hour);
-                player.sendMessage(ChatColor.GREEN + "Restart time set to " + hour + ":00!");
+                player.sendMessage(lang.getMessage("message.restart_time_set", "{hour}", String.valueOf(hour)));
             }
         } catch (NumberFormatException ignored) {}
 
@@ -161,67 +172,71 @@ public class AdminGUIListener implements Listener {
     }
 
     private void handleResetTypeMenuClick(Player player, String itemName) {
-        switch (itemName) {
-            case "Daily Reset":
-                plugin.setResetType("daily");
-                player.sendMessage(ChatColor.GREEN + "Reset type set to daily!");
-                adminGUI.openMainMenu(player);
-                break;
-            case "Weekly Reset":
-                plugin.setResetType("weekly");
-                player.sendMessage(ChatColor.GREEN + "Reset type set to weekly!");
-                adminGUI.openResetDayMenu(player);
-                break;
-            case "Monthly Reset":
-                plugin.setResetType("monthly");
-                player.sendMessage(ChatColor.GREEN + "Reset type set to monthly!");
-                adminGUI.openMonthlyDayMenu(player);
-                break;
-            case "Back":
-                adminGUI.openMainMenu(player);
-                break;
+        String backText = ChatColor.stripColor(lang.getMessage("gui.common.back"));
+        String dailyText = ChatColor.stripColor(lang.getMessage("gui.reset_type.daily"));
+        String weeklyText = ChatColor.stripColor(lang.getMessage("gui.reset_type.weekly"));
+        String monthlyText = ChatColor.stripColor(lang.getMessage("gui.reset_type.monthly"));
+
+        if (itemName.equals(dailyText)) {
+            plugin.setResetType("daily");
+            player.sendMessage(lang.getMessage("message.reset_type_daily"));
+            adminGUI.openMainMenu(player);
+        } else if (itemName.equals(weeklyText)) {
+            plugin.setResetType("weekly");
+            player.sendMessage(lang.getMessage("message.reset_type_weekly"));
+            adminGUI.openResetDayMenu(player);
+        } else if (itemName.equals(monthlyText)) {
+            plugin.setResetType("monthly");
+            player.sendMessage(lang.getMessage("message.reset_type_monthly"));
+            adminGUI.openMonthlyDayMenu(player);
+        } else if (itemName.equals(backText)) {
+            adminGUI.openMainMenu(player);
         }
     }
 
     private void handleMonthlyDayMenuClick(Player player, String itemName) {
-        if (itemName.equals("Back")) {
+        String backText = ChatColor.stripColor(lang.getMessage("gui.common.back"));
+        if (itemName.equals(backText)) {
             adminGUI.openMainMenu(player);
             return;
         }
 
-        if (itemName.startsWith("Day ")) {
-            try {
-                int day = Integer.parseInt(itemName.substring(4));
+        // Try to extract day number from the item name
+        try {
+            // Remove any non-digit characters and parse
+            String numStr = itemName.replaceAll("[^0-9]", "");
+            if (!numStr.isEmpty()) {
+                int day = Integer.parseInt(numStr);
                 if (day >= 1 && day <= 31) {
                     plugin.setResetDay(day);
-                    player.sendMessage(ChatColor.GREEN + "Monthly reset day set to day " + day + "!");
+                    player.sendMessage(lang.getMessage("message.monthly_reset_day_set", "{day}", String.valueOf(day)));
                 }
-            } catch (NumberFormatException ignored) {}
-        }
+            }
+        } catch (NumberFormatException ignored) {}
 
         adminGUI.openMainMenu(player);
     }
 
     private void handleResetDayMenuClick(Player player, String itemName) {
-        if (itemName.equals("Back")) {
+        String backText = ChatColor.stripColor(lang.getMessage("gui.common.back"));
+        if (itemName.equals(backText)) {
             adminGUI.openMainMenu(player);
             return;
         }
 
-        int day = switch (itemName) {
-            case "Monday" -> 1;
-            case "Tuesday" -> 2;
-            case "Wednesday" -> 3;
-            case "Thursday" -> 4;
-            case "Friday" -> 5;
-            case "Saturday" -> 6;
-            case "Sunday" -> 7;
-            default -> -1;
-        };
+        String[] dayKeys = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
+        int day = -1;
+        for (int i = 0; i < dayKeys.length; i++) {
+            String dayText = ChatColor.stripColor(lang.getMessage("gui.reset_day." + dayKeys[i]));
+            if (itemName.equals(dayText)) {
+                day = i + 1;
+                break;
+            }
+        }
 
         if (day != -1) {
             plugin.setResetDay(day);
-            player.sendMessage(ChatColor.GREEN + "Weekly reset day set to " + itemName + "!");
+            player.sendMessage(lang.getMessage("message.weekly_reset_day_set", "{day}", itemName));
         }
 
         adminGUI.openMainMenu(player);

@@ -1,3 +1,6 @@
+# Language setting (available: en_us, ja_jp)
+language: "en_us"
+
 worldName: "Resources"    # Default world name set to "Resources"
 resetWarningTime: 5       # Time (in minutes) to warn players before reset
 restartTime: 3            # Hour of day when reset happens (24-hour format)
