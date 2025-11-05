@@ -3,6 +3,7 @@ package com.lozaine.ResourceWorldResetter.worldmanager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.WorldType;
+import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.Method;
 import java.util.logging.Logger;
@@ -11,20 +12,17 @@ import java.util.logging.Logger;
  * Adapter for Multiverse-Core 4.x using reflection for compatibility
  */
 public class MultiverseCore4Adapter implements WorldManagerAdapter {
-    private final Object multiverseCore;
+    private final Plugin multiverseCore;
     private final Object mvWorldManager;
     private final Logger logger;
     private final String version;
     
-    public MultiverseCore4Adapter(Object multiverseCore, Logger logger) throws ReflectiveOperationException {
+    public MultiverseCore4Adapter(Plugin multiverseCore, Logger logger) throws ReflectiveOperationException {
         this.multiverseCore = multiverseCore;
         this.logger = logger;
         
         // Get version
-        Method getDescriptionMethod = multiverseCore.getClass().getMethod("getDescription");
-        Object pluginDescriptor = getDescriptionMethod.invoke(multiverseCore);
-        Method getVersionMethod = pluginDescriptor.getClass().getMethod("getVersion");
-        this.version = (String) getVersionMethod.invoke(pluginDescriptor);
+        this.version = multiverseCore.getDescription().getVersion();
         
         // Get MVWorldManager using reflection
         Method getMVWorldManagerMethod = multiverseCore.getClass().getMethod("getMVWorldManager");
@@ -75,13 +73,6 @@ public class MultiverseCore4Adapter implements WorldManagerAdapter {
             logger.info("Unloading chunks for world: " + worldName);
             for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
                 chunk.unload(true);
-            }
-            
-            // Wait a tick for chunks to fully unload
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
             
             // Try to unload using Multiverse API

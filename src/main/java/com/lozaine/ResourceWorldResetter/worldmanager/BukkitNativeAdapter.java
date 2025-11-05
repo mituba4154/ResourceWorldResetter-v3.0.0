@@ -51,13 +51,6 @@ public class BukkitNativeAdapter implements WorldManagerAdapter {
             chunk.unload(true);
         }
         
-        // Wait a tick for chunks to fully unload
-        try {
-            Thread.sleep(50);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        
         // Attempt to unload world
         logger.info("Attempting to unload world using Bukkit native: " + worldName);
         boolean result = Bukkit.unloadWorld(world, true);

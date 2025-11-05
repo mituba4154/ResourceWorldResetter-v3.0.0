@@ -60,13 +60,6 @@ public class MultiverseCore5Adapter implements WorldManagerAdapter {
             for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
                 chunk.unload(true);
             }
-            
-            // Wait a tick for chunks to fully unload
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
         }
         
         // Create unload options
