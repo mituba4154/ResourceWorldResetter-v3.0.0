@@ -23,7 +23,10 @@ repositories {
 
 dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
-    compileOnly 'org.mvplugins.multiverse.core:multiverse-core:5.2.1'
+    compileOnly('org.mvplugins.multiverse.core:multiverse-core:5.2.1') {
+        // Make it optional
+        transitive = false
+    }
 }
 
 java {

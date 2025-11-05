@@ -2,8 +2,6 @@ package com.lozaine.ResourceWorldResetter.gui;
 
 import com.lozaine.ResourceWorldResetter.ResourceWorldResetter;
 import com.lozaine.ResourceWorldResetter.lang.LanguageManager;
-import org.mvplugins.multiverse.core.MultiverseCore;
-import org.mvplugins.multiverse.core.world.MultiverseWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -20,7 +18,6 @@ public class AdminGUI implements Listener {
     private final ResourceWorldResetter plugin;
     private final LanguageManager lang;
     private final Map<UUID, GuiType> activeGuis = new HashMap<>();
-    private final MultiverseCore mvCore;
 
     public enum GuiType {
         MAIN_MENU,
@@ -35,7 +32,6 @@ public class AdminGUI implements Listener {
     public AdminGUI(ResourceWorldResetter plugin) {
         this.plugin = plugin;
         this.lang = plugin.getLanguageManager();
-        this.mvCore = (MultiverseCore) Bukkit.getPluginManager().getPlugin("Multiverse-Core");
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -85,62 +81,31 @@ public class AdminGUI implements Listener {
 
         int slot = 0;
 
-        // Get all worlds from Multiverse
-        if (mvCore != null) {
-            Collection<MultiverseWorld> mvWorlds = mvCore.getApi().getWorldManager().getWorlds();
-            for (MultiverseWorld mvWorld : mvWorlds) {
-                // Get the Bukkit world from the loaded MV world
-                org.bukkit.World world = Bukkit.getWorld(mvWorld.getName());
-                if (world != null) {
-                    Material icon = Material.GRASS_BLOCK;
-                    String description = lang.getMessage("gui.world.normal");
+        // Get all worlds from Bukkit
+        for (World world : Bukkit.getWorlds()) {
+            Material icon = Material.GRASS_BLOCK;
+            String description = lang.getMessage("gui.world.normal");
 
-                    // Choose appropriate icon based on world type
-                    if (world.getEnvironment() == World.Environment.NETHER) {
-                        icon = Material.NETHERRACK;
-                        description = lang.getMessage("gui.world.nether");
-                    } else if (world.getEnvironment() == World.Environment.THE_END) {
-                        icon = Material.END_STONE;
-                        description = lang.getMessage("gui.world.end");
-                    }
-
-                    // If this is the current resource world, highlight it
-                    String worldName = world.getName();
-                    String displayName = worldName;
-                    if (worldName.equals(plugin.getWorldName())) {
-                        displayName = lang.getMessage("gui.world.current", "{world}", worldName);
-                    }
-
-                    gui.setItem(slot++, createGuiItem(icon, displayName, description));
-
-                    // Ensure we don't exceed inventory size
-                    if (slot >= 45) break;
-                }
+            // Choose appropriate icon based on world type
+            if (world.getEnvironment() == World.Environment.NETHER) {
+                icon = Material.NETHERRACK;
+                description = lang.getMessage("gui.world.nether");
+            } else if (world.getEnvironment() == World.Environment.THE_END) {
+                icon = Material.END_STONE;
+                description = lang.getMessage("gui.world.end");
             }
-        } else {
-            // Fallback if Multiverse isn't available
-            for (World world : Bukkit.getWorlds()) {
-                Material icon = Material.GRASS_BLOCK;
-                String description = lang.getMessage("gui.world.normal");
 
-                if (world.getEnvironment() == World.Environment.NETHER) {
-                    icon = Material.NETHERRACK;
-                    description = lang.getMessage("gui.world.nether");
-                } else if (world.getEnvironment() == World.Environment.THE_END) {
-                    icon = Material.END_STONE;
-                    description = lang.getMessage("gui.world.end");
-                }
-
-                String worldName = world.getName();
-                String displayName = worldName;
-                if (worldName.equals(plugin.getWorldName())) {
-                    displayName = lang.getMessage("gui.world.current", "{world}", worldName);
-                }
-
-                gui.setItem(slot++, createGuiItem(icon, displayName, description));
-
-                if (slot >= 45) break;
+            // If this is the current resource world, highlight it
+            String worldName = world.getName();
+            String displayName = worldName;
+            if (worldName.equals(plugin.getWorldName())) {
+                displayName = lang.getMessage("gui.world.current", "{world}", worldName);
             }
+
+            gui.setItem(slot++, createGuiItem(icon, displayName, description));
+
+            // Ensure we don't exceed inventory size
+            if (slot >= 45) break;
         }
 
         // Back button
