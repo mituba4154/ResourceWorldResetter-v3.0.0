@@ -4,8 +4,9 @@ import com.lozaine.ResourceWorldResetter.gui.AdminGUI;
 import com.lozaine.ResourceWorldResetter.gui.AdminGUIListener;
 import com.lozaine.ResourceWorldResetter.lang.LanguageManager;
 import com.lozaine.ResourceWorldResetter.utils.LogUtil;
-import org.mvplugins.multiverse.core.MultiverseCore;
-import org.mvplugins.multiverse.core.world.WorldManager;
+import com.lozaine.ResourceWorldResetter.worldmanager.WorldManagerAdapter;
+import com.lozaine.ResourceWorldResetter.worldmanager.WorldManagerAdapterFactory;
+import com.lozaine.ResourceWorldResetter.worldmanager.WorldOperationResult;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -21,11 +22,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
-import static org.mvplugins.multiverse.core.utils.FileUtils.*;
-
 public class ResourceWorldResetter extends JavaPlugin {
     private String worldName;
-    private MultiverseCore core;
+    private WorldManagerAdapter worldManager;
     private int restartTime;
     private int resetWarningTime;
     private String resetType;
@@ -143,13 +142,9 @@ public class ResourceWorldResetter extends JavaPlugin {
         String language = getConfig().getString("language", "en_us");
         languageManager = new LanguageManager(this, language);
         
-        core = (MultiverseCore) Bukkit.getPluginManager().getPlugin("Multiverse-Core");
-
-        if (core == null) {
-            LogUtil.log(getLogger(), "Multiverse-Core not found! Disabling plugin.", Level.SEVERE);
-            Bukkit.getPluginManager().disablePlugin(this);
-            return;
-        }
+        // Initialize world manager adapter with auto-detection
+        worldManager = WorldManagerAdapterFactory.createAdapter(getLogger());
+        LogUtil.log(getLogger(), "Initialized world manager: " + worldManager.getAdapterName(), Level.INFO);
 
         if (getConfig().getBoolean("metrics.enabled", true)) {
             int pluginId = 25197;
@@ -158,6 +153,7 @@ public class ResourceWorldResetter extends JavaPlugin {
             metrics.addCustomChart(new Metrics.SimplePie("reset_hour", () -> String.valueOf(this.restartTime)));
             metrics.addCustomChart(new Metrics.SimplePie("warning_time", () -> String.valueOf(this.resetWarningTime)));
             metrics.addCustomChart(new Metrics.SimplePie("server_version", () -> Bukkit.getBukkitVersion()));
+            metrics.addCustomChart(new Metrics.SimplePie("world_manager", () -> worldManager.getAdapterName()));
             LogUtil.log(getLogger(), "bStats metrics enabled", Level.INFO);
         } else {
             LogUtil.log(getLogger(), "bStats metrics disabled by configuration", Level.INFO);
@@ -336,56 +332,49 @@ public class ResourceWorldResetter extends JavaPlugin {
         LogUtil.log(getLogger(), "Starting world reset process for " + worldName, Level.INFO);
         Bukkit.broadcastMessage(languageManager.getMessage("message.reset.starting"));
 
+        // Teleport all players out of the world first
         teleportPlayersSafely(world);
-
-        WorldManager worldManager = core.getApi().getWorldManager();
         
-        // Get the loaded world and unload it using MV 5.x API
-        var loadedWorldOpt = worldManager.getLoadedWorld(worldName);
-        if (loadedWorldOpt.isEmpty()) {
-            LogUtil.log(getLogger(), "World " + worldName + " is not loaded. Aborting reset.", Level.SEVERE);
-            Bukkit.broadcastMessage(languageManager.getMessage("message.reset.failed"));
-            return;
-        }
-        
-        org.mvplugins.multiverse.core.world.options.UnloadWorldOptions unloadOptions = 
-            org.mvplugins.multiverse.core.world.options.UnloadWorldOptions.world(loadedWorldOpt.get());
-        
-        var unloadResult = worldManager.unloadWorld(unloadOptions);
-        if (unloadResult.isFailure()) {
-            LogUtil.log(getLogger(), "Failed to unload world: " + worldName + ". Error: " + unloadResult.getFailureReason(), Level.SEVERE);
-            Bukkit.broadcastMessage(languageManager.getMessage("message.reset.failed"));
-            return;
-        }
-
-        CompletableFuture.runAsync(() -> {
-            File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
-            LogUtil.log(getLogger(), "Deleting world folder: " + worldFolder.getAbsolutePath(), Level.INFO);
-
-            if (deleteFolder(worldFolder)) {
-                Bukkit.getScheduler().runTask(this, () -> {
-                    LogUtil.log(getLogger(), "World folder deleted, recreating world", Level.INFO);
-                    recreateWorld();
-                    long duration = System.currentTimeMillis() - startTime;
-                    double tpsAfter = getServerTPS();
-                    Bukkit.broadcastMessage(languageManager.getMessage("message.reset.completed",
-                            "{seconds}", String.valueOf(duration/1000),
-                            "{tps_before}", String.format("%.2f", tpsBefore),
-                            "{tps_after}", String.format("%.2f", tpsAfter)));
-                    LogUtil.log(getLogger(), "Resource world reset completed in " + duration + "ms", Level.INFO);
-
-                    // Reschedule for next time
-                    if (resetTaskId != -1) {
-                        Bukkit.getScheduler().runTaskLater(this, this::scheduleDailyReset, 20);
-                    }
-                });
-            } else {
-                LogUtil.log(getLogger(), "Failed to delete world folder: " + worldName, Level.SEVERE);
-                Bukkit.getScheduler().runTask(this, () -> {
-                    Bukkit.broadcastMessage(languageManager.getMessage("message.reset.failed"));
-                });
+        // Give teleportation time to complete before unloading
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            // Now unload the world using the adapter
+            WorldOperationResult unloadResult = worldManager.unloadWorld(worldName);
+            if (unloadResult.isFailure()) {
+                LogUtil.log(getLogger(), "Failed to unload world: " + worldName + ". Error: " + unloadResult.getMessage(), Level.SEVERE);
+                Bukkit.broadcastMessage(languageManager.getMessage("message.reset.failed"));
+                return;
             }
-        });
+
+            // Async delete and recreate
+            CompletableFuture.runAsync(() -> {
+                File worldFolder = new File(Bukkit.getWorldContainer(), worldName);
+                LogUtil.log(getLogger(), "Deleting world folder: " + worldFolder.getAbsolutePath(), Level.INFO);
+
+                if (deleteFolder(worldFolder)) {
+                    Bukkit.getScheduler().runTask(this, () -> {
+                        LogUtil.log(getLogger(), "World folder deleted, recreating world", Level.INFO);
+                        recreateWorld();
+                        long duration = System.currentTimeMillis() - startTime;
+                        double tpsAfter = getServerTPS();
+                        Bukkit.broadcastMessage(languageManager.getMessage("message.reset.completed",
+                                "{seconds}", String.valueOf(duration/1000),
+                                "{tps_before}", String.format("%.2f", tpsBefore),
+                                "{tps_after}", String.format("%.2f", tpsAfter)));
+                        LogUtil.log(getLogger(), "Resource world reset completed in " + duration + "ms", Level.INFO);
+
+                        // Reschedule for next time
+                        if (resetTaskId != -1) {
+                            Bukkit.getScheduler().runTaskLater(this, this::scheduleDailyReset, 20);
+                        }
+                    });
+                } else {
+                    LogUtil.log(getLogger(), "Failed to delete world folder: " + worldName, Level.SEVERE);
+                    Bukkit.getScheduler().runTask(this, () -> {
+                        Bukkit.broadcastMessage(languageManager.getMessage("message.reset.failed"));
+                    });
+                }
+            });
+        }, 10L); // Wait 10 ticks (0.5 seconds) after teleportation
     }
 
     private void performRegionReset(World world) {
@@ -492,40 +481,46 @@ public class ResourceWorldResetter extends JavaPlugin {
     }
 
     public void recreateWorld() {
-        WorldManager worldManager = core.getApi().getWorldManager();
+        // Create world using the adapter
+        WorldOperationResult createResult = worldManager.createWorld(
+            worldName, 
+            World.Environment.NORMAL, 
+            WorldType.NORMAL, 
+            true
+        );
         
-        // Create world using MV 5.x API with fluent interface
-        org.mvplugins.multiverse.core.world.options.CreateWorldOptions createOptions =
-            org.mvplugins.multiverse.core.world.options.CreateWorldOptions.worldName(worldName)
-                .environment(World.Environment.NORMAL)
-                .worldType(WorldType.NORMAL)
-                .generateStructures(true);
-        
-        var createResult = worldManager.createWorld(createOptions);
         if (createResult.isSuccess()) {
             Bukkit.broadcastMessage(languageManager.getMessage("message.reset.recreated"));
             LogUtil.log(getLogger(), "World recreation successful", Level.INFO);
         } else {
             Bukkit.broadcastMessage(languageManager.getMessage("message.reset.recreate_failed"));
-            LogUtil.log(getLogger(), "Failed to recreate world: " + worldName + ". Error: " + createResult.getFailureReason(), Level.SEVERE);
+            LogUtil.log(getLogger(), "Failed to recreate world: " + worldName + ". Error: " + createResult.getMessage(), Level.SEVERE);
         }
     }
 
     public void ensureResourceWorldExists() {
-        WorldManager worldManager = core.getApi().getWorldManager();
-        if (!worldManager.isWorld(worldName)) {
+        if (!worldManager.worldExists(worldName)) {
             LogUtil.log(getLogger(), "Resource world doesn't exist, creating: " + worldName, Level.INFO);
             
-            org.mvplugins.multiverse.core.world.options.CreateWorldOptions createOptions =
-                org.mvplugins.multiverse.core.world.options.CreateWorldOptions.worldName(worldName)
-                    .environment(World.Environment.NORMAL)
-                    .worldType(WorldType.NORMAL)
-                    .generateStructures(true);
+            WorldOperationResult createResult = worldManager.createWorld(
+                worldName,
+                World.Environment.NORMAL,
+                WorldType.NORMAL,
+                true
+            );
             
-            var createResult = worldManager.createWorld(createOptions);
             LogUtil.log(getLogger(), "Created resource world: " + worldName + ", Success: " + createResult.isSuccess(), Level.INFO);
         } else {
             LogUtil.log(getLogger(), "Resource world exists: " + worldName, Level.INFO);
+            
+            // Ensure the world is loaded
+            if (!worldManager.isWorldLoaded(worldName)) {
+                LogUtil.log(getLogger(), "Resource world is not loaded, loading: " + worldName, Level.INFO);
+                WorldOperationResult loadResult = worldManager.loadWorld(worldName);
+                if (loadResult.isFailure()) {
+                    LogUtil.log(getLogger(), "Failed to load resource world: " + loadResult.getMessage(), Level.WARNING);
+                }
+            }
         }
     }
 
